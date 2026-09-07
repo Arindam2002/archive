@@ -1,17 +1,56 @@
-# Quartz v5
+# archive
 
-> “[One] who works with the door open gets all kinds of interruptions, but [they] also occasionally gets clues as to what the world is and what might be important.” — Richard Hamming
+Live site: **https://arindam2002.github.io/archive/**
 
-Quartz is a set of tools that helps you publish your [digital garden](https://jzhao.xyz/posts/networked-thought) and notes as a website for free.
+A personal knowledge base of interview prep material and the posts that grow
+out of it. It is a static site built with [Quartz](https://quartz.jzhao.xyz/)
+and published from this repo with GitHub Pages on every push to `main`.
 
-🔗 Read the documentation and get started: https://quartz.jzhao.xyz/
+## What is on the site
 
-[Join the Discord Community](https://discord.gg/cRFFHYye7t)
+- **Study** (`content/study/`): topic write-ups on backend engineering,
+  system design, data structures and algorithms, and LLM infrastructure. Each
+  one has an overview diagram, a flashcard deck, and links to the topics it
+  builds on, so the graph view shows how the material hangs together. These
+  pages are generated, not hand-edited here: they come out of
+  [gig-radar](https://github.com/Arindam2002/gig-radar), a job-hunt tool whose
+  daily routine writes and deepens study topics from real job descriptions.
+  Only topics that have been read and approved in that tool get exported, and
+  a topic that changed after approval is held back until it is reviewed again.
+- **Blog** (`content/blog/`): posts written by hand, as plain markdown with
+  `title`, `date` and `tags` frontmatter. A post can link a study topic with a
+  wikilink (`[[some-topic-slug]]`) and it shows up in the same graph. Set
+  `draft: true` to keep a post out of the build.
 
-## Sponsors
+## How content gets here
 
-<p align="center">
-  <a href="https://github.com/sponsors/jackyzha0">
-    <img src="https://cdn.jsdelivr.net/gh/jackyzha0/jackyzha0/sponsorkit/sponsors.svg" />
-  </a>
-</p>
+```
+gig-radar study folder  --(publish export)-->  content/study/   --(push)-->  GitHub Pages
+your editor             --(write markdown)-->  content/blog/    --(push)-->  GitHub Pages
+```
+
+The export owns `content/study/` through a manifest it writes next to the
+pages, and it deletes pages that are no longer approved. It never touches
+anything else in `content/`.
+
+## Running it locally
+
+```bash
+npm ci
+npx quartz plugin restore
+npx quartz build --serve
+```
+
+Then open http://localhost:8080/. The deploy workflow runs the same build on
+every push to `main` and publishes `public/` to GitHub Pages.
+
+## Layout
+
+```
+content/
+  index.md        landing page
+  study/          exported topics, diagrams/ next to them (generated)
+  blog/           hand-written posts
+quartz.*          site configuration and layout
+.github/workflows/deploy.yml   builds and publishes on push to main
+```
