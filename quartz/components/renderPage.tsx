@@ -266,10 +266,18 @@ export function renderPage(
 
   const lang = componentData.fileData.frontmatter?.lang ?? cfg.locale?.split("-")[0] ?? "en"
   const direction = i18n(cfg.locale).direction ?? "ltr"
+  // Backported from upstream Quartz: the explorer, graph and search plugins
+  // read this to find the site's subpath (here /archive on GitHub Pages).
+  // During local dev (--serve), the dev server serves from root without the
+  // baseUrl subpath, so basePath must be empty to avoid broken links.
+  const basePath =
+    componentData.ctx.argv.serve || !cfg.baseUrl
+      ? ""
+      : new URL(`https://${cfg.baseUrl}`).pathname.replace(/\/$/, "")
   const doc = (
     <html lang={lang} dir={direction}>
       <Head {...componentData} />
-      <body data-slug={slug}>
+      <body data-slug={slug} data-basepath={basePath}>
         {frame.css && <style dangerouslySetInnerHTML={{ __html: frame.css }} />}
         <div id="quartz-root" class="page" data-frame={frame.name}>
           <Body {...componentData}>
