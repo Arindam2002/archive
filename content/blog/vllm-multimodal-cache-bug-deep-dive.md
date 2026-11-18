@@ -1,6 +1,6 @@
 ---
 title: "A vLLM Deep Dive: How a Multimodal Cache Bug Froze Our Model Server"
-description: "A deep dive into vLLM's multimodal cache, why the engine froze while /health stayed green, and what we changed."
+description: "A deep dive into vLLM's multimodal cache, how one bug froze the engine while every health check passed, and what we changed."
 date: 2026-11-17
 tags:
   - vllm
@@ -16,6 +16,8 @@ One afternoon earlier this year, our document AI stopped working. It didn't cras
 For a while, almost every document sent to it either hung or failed. Through all of that, every dashboard we had said things were fine. Docker had been calling the container `(healthy)` for weeks, and it kept saying so. We found out the way nobody wants to: from outside our own monitoring.
 
 The fix, once we found it, was quick. This post is about the stretch before it, and why none of our checks saw it.
+
+> A quick heads-up before we start. I don't enjoy long articles that are just walls of text either, and this one is long. So I've kept the incident as simple as I could and drawn a few diagrams to show what's happening under the hood. Hopefully it saves you some trouble somewhere, someday (it probably won't but it's a fun read!)
 
 ## A bit of context
 
@@ -106,7 +108,7 @@ I think this is the most useful part of the story, because none of our checks wa
 - **vLLM's queue showed zero waiting** because nothing could get into the queue. It really was empty.
 - **The gateway was fast** the whole time, answering in well under half a second. Requests only stopped once they reached the model.
 
-Every check asked "is the process up?" (**liveness**). None of them asked "can it do the job?" (**readiness**).
+> Every check asked "is the process up?" (**liveness**). None of them asked "can it do the job?" (**readiness**).
 
 ![The Docker healthcheck stops at the API server, which is up, while real requests go on to the engine, which is stuck](blog/diagrams/vllm-multimodal-cache-bug-deep-dive/04-health-check-blind-spot.svg)
 
@@ -120,7 +122,7 @@ Recovery really was turning it off and on again. We restarted vLLM, then restart
 
 ## What we changed
 
-We didn't fix the vLLM bug that week. What we fixed was not knowing.
+> We didn't fix the vLLM bug that week. What we fixed was not knowing.
 
 **We made the health check do real work.** A watchdog now sends a real one-token completion to vLLM every 30 seconds, over its own small connection pool, so a jammed main pool can't make a healthy engine look dead. The rule is simple. If the model can't produce one token, it isn't healthy, whatever `/health` says.
 
@@ -136,7 +138,9 @@ We didn't fix the vLLM bug that week. What we fixed was not knowing.
 
 ## How vLLM fixed it
 
-Some time after our outage, vLLM merged [#46747](https://github.com/vllm-project/vllm/pull/46747), "Recover from P0/P1 processor cache drift", and shipped it in **v0.28.0**. I like the approach, because it doesn't pretend the drift can be prevented. Its description says the mirroring assumption *"cannot be guaranteed across a concurrent, separate-process front-end, so a drift should be recoverable rather than fatal."*
+Some time after our outage, vLLM merged [#46747](https://github.com/vllm-project/vllm/pull/46747), "Recover from P0/P1 processor cache drift", and shipped it in **v0.28.0**. I like the approach, because it doesn't pretend the drift can be prevented. Its description says the mirroring assumption:
+
+> "cannot be guaranteed across a concurrent, separate-process front-end, so a drift should be recoverable rather than fatal."
 
 So instead of asserting:
 
@@ -208,3 +212,23 @@ One honest limit: a watchdog like this only detects the problem. Wired in as a l
 ---
 
 If I had to put the whole outage in one sentence: most of it was not knowing, some of it was working out what was wrong, and only a sliver was the fix. Everything we built afterwards goes after the first part.
+
+## Further reading
+
+If you want to go deeper, these are the references I'd start with.
+
+**vLLM**
+
+- [Architecture overview](https://docs.vllm.ai/en/latest/design/arch_overview/). The API server and the engine, and how a request moves between them.
+- [Optimization and tuning: multi-modal caching](https://docs.vllm.ai/en/latest/configuration/optimization/#multi-modal-caching). The cache this post is about, and the settings that control it, including the shared-memory option.
+- [Multi-modal data processing](https://docs.vllm.ai/en/latest/design/mm_processing/). How vLLM processes images and other inputs before the model sees them.
+- [Production metrics](https://docs.vllm.ai/en/latest/usage/metrics/). The Prometheus metrics vLLM exposes, including the waiting-requests counter.
+- [The cache-drift fix, #46747](https://github.com/vllm-project/vllm/pull/46747). The bug and the fix in the maintainers' own words.
+
+**Health checks, overload and retries**
+
+- [Implementing health checks](https://aws.amazon.com/builders-library/implementing-health-checks/) (Amazon Builders' Library). Shallow and deep checks, and how each kind goes wrong.
+- [Using load shedding to avoid overload](https://aws.amazon.com/builders-library/using-load-shedding-to-avoid-overload/) (Amazon Builders' Library). Why turning work away early beats accepting it and timing out.
+- [Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) (Amazon Builders' Library). The thundering herd, and how to avoid causing one.
+- [Liveness, readiness, and startup probes](https://kubernetes.io/docs/concepts/workloads/pods/probes/) (Kubernetes docs). The distinction this whole post turns on.
+- [Addressing cascading failures](https://sre.google/sre-book/addressing-cascading-failures/) (Google SRE book). How one stuck component takes the rest down with it.

@@ -10,6 +10,19 @@ body[data-slug="blog/index"] .content-meta {
   display: none;
 }
 
+// Quote blocks in articles: a grey bar and slightly lighter text, so asides
+// and key lines stand apart from the body without shouting.
+article blockquote {
+  border-left: 3px solid var(--gray);
+  padding: 0.1rem 0 0.1rem 1.1rem;
+  margin: 1.4rem 0;
+  opacity: 0.82;
+
+  & > p {
+    margin: 0.4rem 0;
+  }
+}
+
 // Figure captions: an italic line written directly under an image, with no
 // blank line between them, is shown as a small centred caption.
 article p > img + em,
