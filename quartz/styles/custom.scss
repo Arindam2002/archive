@@ -1,3 +1,39 @@
 @use "./base.scss";
 
 // put your custom CSS here!
+
+// The home, About and Blog landing pages are not posts, so they don't show a
+// date and reading time under the title.
+body[data-slug="index"] .content-meta,
+body[data-slug="about"] .content-meta,
+body[data-slug="blog/index"] .content-meta {
+  display: none;
+}
+
+// Figure captions: an italic line written directly under an image, with no
+// blank line between them, is shown as a small centred caption.
+article p > img + em,
+article p > img + br + em {
+  display: block;
+  margin-top: 0.4rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--darkgray);
+}
+
+// Mermaid sizes the boxes of a sequence diagram with its own default font,
+// but the Quartz mermaid script only sets the code font as a theme variable,
+// so the labels were drawn in the wider monospace font and spilled out of
+// their boxes. Draw them in the font they were measured with.
+code.mermaid svg[aria-roledescription="sequence"] {
+  text,
+  tspan {
+    font-family: "trebuchet ms", verdana, arial, sans-serif !important;
+  }
+
+  // Note boxes come out a few pixels narrower than their text at 16px.
+  .noteText,
+  .noteText tspan {
+    font-size: 14px !important;
+  }
+}

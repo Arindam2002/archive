@@ -228,8 +228,10 @@ plugins:
     enabled: true
     options:
       links:
-        GitHub: https://github.com/jackyzha0/quartz
-        Discord Community: https://discord.gg/cRFFHYye7t
+        GitHub: https://github.com/Arindam2002
+        LinkedIn: https://www.linkedin.com/in/upadhyay-arindam/
+        X: https://x.com/ArindamUpadhya1
+        RSS: https://arindam2002.github.io/archive/index.xml
   - source: github:quartz-community/comments
     enabled: false
     options:
