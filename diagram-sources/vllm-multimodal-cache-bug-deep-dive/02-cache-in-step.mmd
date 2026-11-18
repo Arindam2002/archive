@@ -1,0 +1,11 @@
+sequenceDiagram
+    participant A as API server (notebook)
+    participant E as Engine (shelf, holds 3)
+    A->>E: image A: fingerprint + prepared image
+    A->>E: image B: fingerprint + prepared image
+    A->>E: image C: fingerprint + prepared image
+    Note over A,E: Notebook: A B C  |  Shelf: A B C
+    A->>E: image A again: fingerprint only
+    E-->>E: finds A on the shelf, reuses it
+    A->>E: image D: fingerprint + prepared image
+    Note over A,E: Both throw out B (least recently used)<br/>Notebook: A C D  |  Shelf: A C D  (still in step)

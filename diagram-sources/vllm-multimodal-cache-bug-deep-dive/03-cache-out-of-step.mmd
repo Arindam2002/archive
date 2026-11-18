@@ -1,0 +1,11 @@
+sequenceDiagram
+    participant A as API server (notebook)
+    participant E as Engine (shelf)
+    Note over A,E: Both: A B C  (A is the oldest)
+    A->>A: request 1 finishes first: A is a repeat,<br/>mark A as used, "send fingerprint only"
+    A->>A: request 2: new image D, throw out B<br/>Notebook: C A D
+    A->>E: request 2 arrives first: image D + data
+    E-->>E: throw out the oldest, which is A<br/>Shelf: B C D
+    A->>E: request 1 arrives: fingerprint A only
+    E-->>E: looks for A on the shelf... not there
+    Note over E: AssertionError: Expected a cached item for mm_hash=...

@@ -1,0 +1,4 @@
+flowchart LR
+    D[Docker healthcheck] -->|/health| API["API server ✅ up"]
+    R[Real request] --> API
+    API --> E["Engine ❌ stuck"]

@@ -1,0 +1,14 @@
+flowchart LR
+    G[Our gateway] -->|HTTP| API
+    subgraph vLLM
+        direction LR
+        API["<b>API server</b><br/>prepares images<br/>tokenizes text<br/>answers /health"] -->|"fingerprint<br/>+ image if new"| E["<b>Engine</b><br/>schedules requests<br/>manages the KV cache"]
+        E --> WK
+        subgraph WK[GPU workers]
+            direction TB
+            W0["<b>GPU worker 0</b><br/>runs the model on GPU 0"]
+            W1["<b>GPU worker 1</b><br/>runs the model on GPU 1"]
+            W2["<b>GPU worker 2</b><br/>runs the model on GPU 2"]
+            W3["<b>GPU worker 3</b><br/>runs the model on GPU 3"]
+        end
+    end
