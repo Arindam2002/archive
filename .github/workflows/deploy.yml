@@ -26,7 +26,19 @@ jobs:
           node-version: 22
       - name: Install Dependencies
         run: npm ci
+      # Restoring ~40 plugins from scratch takes about ten minutes, so keep the
+      # folder between runs. The key changes whenever a plugin version in
+      # quartz.lock.json changes; there is no fallback key on purpose, because
+      # `plugin restore` skips folders that already exist and would keep a
+      # stale plugin.
+      - name: Cache Quartz plugins
+        id: quartz-plugins
+        uses: actions/cache@v4
+        with:
+          path: .quartz/plugins
+          key: quartz-plugins-${{ runner.os }}-node22-${{ hashFiles('quartz.lock.json', 'package-lock.json') }}
       - name: Restore Quartz plugins
+        if: steps.quartz-plugins.outputs.cache-hit != 'true'
         run: npx quartz plugin restore
       - name: Build Quartz
         run: npx quartz build
